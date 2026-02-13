@@ -52,7 +52,7 @@ export default function Home() {
       if (newVal >= LOCK_THRESHOLD) next[index].locked = true;
 
       // 2. Rule A (Divisible by 3 -> Right -1)
-      if (newVal % 3 === 0) {
+      if (newVal !== 0 && newVal % 3 === 0) {
         const col = index % COLS;
         if (col < COLS - 1) { // Not last column
           const rightIdx = index + 1;
@@ -65,7 +65,7 @@ export default function Home() {
       }
 
       // 3. Rule B (Divisible by 5 -> Below +2)
-      if (newVal % 5 === 0) {
+      if (newVal !== 0 && newVal % 5 === 0) {
         const row = Math.floor(index / COLS);
         if (row < COLS - 1) { // Not bottom row
           const belowIdx = index + COLS;
