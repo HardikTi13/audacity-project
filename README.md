@@ -12,6 +12,7 @@ This project implements a 3x3 interactive grid where:
 - Each box starts at 0
 - Clicking a box increments its value by 1
 - Special rules create "ripple effects" across the grid
+- Boxes change color dynamically based on their value (Shades of Gray for Even, Blue for Odd)
 - Boxes can become "locked" when they reach certain values
 
 ## 🎯 Game Rules
@@ -36,9 +37,9 @@ This project implements a 3x3 interactive grid where:
 
 ### Color Scheme
 ### Color Scheme
-- **Even Numbers:** Light Gray (#e0e0e0) background, black text
-- **Odd Numbers:** Navy Blue (#1a237e) background, white text
-- **Locked (≥15):** Red (#ef5350) background, white text, not clickable
+- **Even Numbers:** Dynamic Gray scaling (Starts at #e0e0e0 and darkens with value)
+- **Odd Numbers:** Dynamic Navy Blue scaling (Starts at #1a237e and lightens with value)
+- **Locked (≥15):** Red (#ef5350) background, white text, permanent lock
 
 ### Styling
 - Rounded corners (4px border-radius)
