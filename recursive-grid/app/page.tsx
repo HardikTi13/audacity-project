@@ -38,41 +38,65 @@ export default function Home() {
     }, 400);
   };
 
-  const handleBoxClick = useCallback((index: number) => {
-    if (grid[index].locked) return;
+  const handleBoxClick = useCallback((initialIndex: number) => {
+    if (grid[initialIndex].locked) return;
 
     setGrid((prev) => {
       const next = prev.map((b) => ({ ...b }));
       
-      // 1. Increment clicked box
-      next[index].value += 1;
-      triggerAnimation(index, 'pop');
+      // Queue for BFS propagation: [index, increment_amount]
+      // We'll queue the initial click as a +1 update
+      const queue: { index: number; change: number }[] = [{ index: initialIndex, change: 1 }];
+      
+      // To prevent infinite loops (though DAG guarantees termination, safety first),
+      // we could track processed events if needed, but for now simple propagation should suffice
+      // given the constraints (Right and Down only).
+      
+      let processedCount = 0;
+      const MAX_PROPAGATIONS = 100; // Safety break
 
-      const newVal = next[index].value;
-      if (newVal >= LOCK_THRESHOLD) next[index].locked = true;
+      while (queue.length > 0 && processedCount < MAX_PROPAGATIONS) {
+        const { index, change } = queue.shift()!;
+        processedCount++;
 
-      // 2. Rule A (Divisible by 3 -> Right -1)
-      if (newVal !== 0 && newVal % 3 === 0) {
-        const col = index % COLS;
-        if (col < COLS - 1) { // Not last column
-          const rightIdx = index + 1;
-          if (!next[rightIdx].locked) {
-            next[rightIdx].value -= 1;
-            triggerAnimation(rightIdx, 'flash');
-            if (next[rightIdx].value >= LOCK_THRESHOLD) next[rightIdx].locked = true;
+        // Apply change
+        if (next[index].locked) continue; // Skip if locked during propagation? 
+        // Logic: Should a locked box accept changes? 
+        // Requirement says "Locked boxes cannot be changed". 
+        // So we check locked state before applying.
+        
+        next[index].value += change;
+        
+        // Trigger animation for this box
+        // Use 'pop' for user click (initial), 'flash' for ripples
+        triggerAnimation(index, index === initialIndex ? 'pop' : 'flash');
+
+        // Check locking
+        if (next[index].value >= LOCK_THRESHOLD) {
+          next[index].locked = true;
+        }
+
+        const newVal = next[index].value;
+
+        // Rule A (Divisible by 3 -> Right -1)
+        if (newVal !== 0 && newVal % 3 === 0) {
+          const col = index % COLS;
+          if (col < COLS - 1) {
+            const rightIdx = index + 1;
+            if (!next[rightIdx].locked) {
+              queue.push({ index: rightIdx, change: -1 });
+            }
           }
         }
-      }
 
-      // 3. Rule B (Divisible by 5 -> Below +2)
-      if (newVal !== 0 && newVal % 5 === 0) {
-        const row = Math.floor(index / COLS);
-        if (row < COLS - 1) { // Not bottom row
-          const belowIdx = index + COLS;
-          if (!next[belowIdx].locked) {
-            next[belowIdx].value += 2;
-            triggerAnimation(belowIdx, 'flash');
-            if (next[belowIdx].value >= LOCK_THRESHOLD) next[belowIdx].locked = true;
+        // Rule B (Divisible by 5 -> Below +2)
+        if (newVal !== 0 && newVal % 5 === 0) {
+          const row = Math.floor(index / COLS);
+          if (row < COLS - 1) {
+            const belowIdx = index + COLS;
+            if (!next[belowIdx].locked) {
+              queue.push({ index: belowIdx, change: 2 });
+            }
           }
         }
       }
@@ -80,6 +104,12 @@ export default function Home() {
       return next;
     });
   }, [grid]);
+
+  const handleReset = () => {
+    setGrid(Array.from({ length: GRID_SIZE }, () => ({ value: 0, locked: false })));
+    setAnimatingCells(new Map());
+  };
+
 
   /* ── Styles Helper ── */
   const getBoxClass = (box: BoxState, idx: number) => {
@@ -153,6 +183,17 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        {/* Reset Button */}
+        <div className="flex justify-center mb-8">
+           <button
+             onClick={handleReset}
+             className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-full transition-all active:scale-95 text-sm"
+           >
+             Reset Grid
+           </button>
+        </div>
+
 
         {/* Legend / Footer */}
         <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-slate-500">
